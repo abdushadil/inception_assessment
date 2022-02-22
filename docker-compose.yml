@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  mysql:
+    build:
+      context: .
+      dockerfile: ./config/mysql/Dockerfile
+    networks:
+      - inception-network
+    environment:
+      - TZ=Asia/Dubai
+      - MYSQL_ROOT_PASSWORD=root
+      - DB_NAME=inception
+      - USERNAME=inception
+      - PASSWORD=inception
+    volumes:
+      - ./db/mysql/mysql_data:/usr/data
+      - ./config/mysql/my.cnf:/etc/mysql/my.cnf
+      - ./config/mysql/inception.sql:/docker-entrypoint-initdb.d/inception.sql
+      - ~/backup:/backup:rw
+    container_name: mysql
+
+  inception:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inception
+    volumes:
+      - ./src:/app:rw
+    env_file: dev.env
+    networks:
+      - inception-network
+    ports:
+      - "8000:8000"
+    tty: true
+    # command: >
+    #   sh -c "gunicorn inception.wsgi:application --bind 0.0.0.0:8000"
+    command: >
+      sh -c "python manage.py runserver 0.0.0.0:8000"
+
+
+networks:
+  inception-network:
+    name: inception-demo
